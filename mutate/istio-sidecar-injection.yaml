@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: inject-istio-sidecar
+  annotations:
+    policies.kyverno.io/title: Auto-Inject Istio Sidecar
+    policies.kyverno.io/category: Istio
+    policies.kyverno.io/description: Automatically adds Istio sidecar injection annotation to pods
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: inject-sidecar-annotation
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    exclude:
+      any:
+      - resources:
+          namespaces:
+          - kube-system
+          - kyverno
+          - istio-system
+    mutate:
+      patchStrategicMerge:
+        metadata:
+          annotations:
+            +(sidecar.istio.io/inject): "true"

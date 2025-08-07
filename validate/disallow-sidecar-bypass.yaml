@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-sidecar-bypass
+  annotations:
+    policies.kyverno.io/title: Prevent Istio Sidecar Bypass
+    policies.kyverno.io/category: Istio
+    policies.kyverno.io/description: Prevents pods from disabling Istio sidecar injection
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: block-sidecar-disable
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    exclude:
+      any:
+      - resources:
+          namespaces:
+          - kube-system
+          - kyverno
+          - istio-system
+    validate:
+      message: "Disabling Istio sidecar injection is not allowed"
+      pattern:
+        metadata:
+          annotations:
+            X(sidecar.istio.io/inject): "false"

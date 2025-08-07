@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: label-namespaces-istio
+  annotations:
+    policies.kyverno.io/title: Auto-Label Namespaces for Istio
+    policies.kyverno.io/category: Istio
+    policies.kyverno.io/description: Automatically adds istio-injection label to new namespaces
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: add-istio-injection-label
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+    exclude:
+      any:
+      - resources:
+          names:
+          - kube-system
+          - kyverno
+          - istio-system
+          - default
+    mutate:
+      patchStrategicMerge:
+        metadata:
+          labels:
+            +(istio-injection): enabled

@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-istio-authz-policy
+  annotations:
+    policies.kyverno.io/title: Generate Istio AuthorizationPolicy
+    policies.kyverno.io/category: Istio
+    policies.kyverno.io/description: Generates default deny-all AuthorizationPolicy for new namespaces
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: create-default-authz-policy
+    match:
+      any:
+      - resources:
+          kinds:
+          - Namespace
+    exclude:
+      any:
+      - resources:
+          names:
+          - kube-system
+          - kyverno
+          - istio-system
+          - default
+    generate:
+      apiVersion: security.istio.io/v1beta1
+      kind: AuthorizationPolicy
+      name: "default-deny-all"
+      namespace: "{{request.object.metadata.name}}"
+      synchronize: true
+      data:
+        metadata:
+          labels:
+            generated-by: kyverno
+        spec:
+          action: DENY
+          rules:
+          - {}
